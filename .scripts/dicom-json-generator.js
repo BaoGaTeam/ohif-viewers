@@ -20,10 +20,12 @@ const path = require('path');
 const fs = require('fs').promises;
 
 const args = process.argv.slice(2);
-const [studyDirectory, urlPrefix, outputPath] = args;
+const [studyDirectory, urlPrefix, outputPath, scheme = 'dicomweb'] = args;
 
-if (args.length !== 3) {
-  console.error('Usage: node dicomStudyToJSONLaunch.js <studyFolder> <urlPrefix> <outputJSONPath>');
+if (args.length < 3 || args.length > 4) {
+  console.error(
+    'Usage: node dicomStudyToJSONLaunch.js <studyFolder> <urlPrefix> <outputJSONPath> [scheme]'
+  );
   process.exit(1);
 }
 
@@ -31,7 +33,7 @@ const model = {
   studies: [],
 };
 
-async function convertDICOMToJSON(studyDirectory, urlPrefix, outputPath) {
+async function convertDICOMToJSON(studyDirectory, urlPrefix, outputPath, scheme) {
   try {
     const files = await recursiveReadDir(studyDirectory);
     console.debug('Processing...');
@@ -42,7 +44,7 @@ async function convertDICOMToJSON(studyDirectory, urlPrefix, outputPath) {
         const dicomDict = dcmjs.data.DicomMessage.readFile(arrayBuffer.buffer);
         const instance = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
 
-        instance.fileLocation = createImageId(file, urlPrefix, studyDirectory);
+        instance.fileLocation = createImageId(file, urlPrefix, studyDirectory,scheme);
         processInstance(instance);
       }
     }
@@ -77,10 +79,10 @@ async function recursiveReadDir(dir) {
   return results;
 }
 
-function createImageId(fileLocation, urlPrefix, studyDirectory) {
+function createImageId(fileLocation, urlPrefix, studyDirectory,scheme) {
   const relativePath = path.relative(studyDirectory, fileLocation);
   const normalizedPath = path.normalize(relativePath).replace(/\\/g, '/');
-  return `dicomweb:${urlPrefix}${normalizedPath}`;
+  return `${scheme}:${urlPrefix}${normalizedPath}`;
 }
 
 function processInstance(instance) {
@@ -262,4 +264,4 @@ function createInstanceMetaDataMultiFrame(instance) {
   return instances;
 }
 
-convertDICOMToJSON(studyDirectory, urlPrefix, outputPath);
+convertDICOMToJSON(studyDirectory, urlPrefix, outputPath,scheme);
