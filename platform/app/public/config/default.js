@@ -290,3 +290,5 @@ window.config = {
     },
   ],
 };
+
+window.config = config;

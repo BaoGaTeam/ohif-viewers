@@ -43,7 +43,7 @@ function commandsModule({
     colorbarService,
     hangingProtocolService,
     syncGroupService,
-  } = servicesManager.services;
+  } = servicesManager.services as CornerstoneServices;
 
   const { measurementServiceSource } = this;
 
@@ -239,7 +239,18 @@ function commandsModule({
       cineService.setIsCineEnabled(!isCineEnabled);
       viewports.forEach((_, index) => cineService.setCine({ id: index, isPlaying: false }));
     },
-
+    toggleIsShownPatientInfo: () => {
+      const { isShownPatientInfo } = visibilityPreferencesService.getState();
+      visibilityPreferencesService.setVisibilityPreferences({
+        isShownPatientInfo: !isShownPatientInfo,
+      });
+    },
+    toggleIsShouldAnonymizePatientInfo: () => {
+      const { isShouldAnonymizePatientInfo } = visibilityPreferencesService.getState();
+      visibilityPreferencesService.setVisibilityPreferences({
+        isShouldAnonymizePatientInfo: !isShouldAnonymizePatientInfo,
+      });
+    },
     setViewportWindowLevel({ viewportId, window, level }) {
       // convert to numbers
       const windowWidthNum = Number(window);
@@ -403,7 +414,7 @@ function commandsModule({
         return;
       }
 
-      const { uiModalService } = servicesManager.services;
+      const { uiModalService, userAuthenticationService } = servicesManager.services;
 
       if (uiModalService) {
         uiModalService.show({
@@ -413,6 +424,7 @@ function commandsModule({
             activeViewportId,
             onClose: uiModalService.hide,
             cornerstoneViewportService,
+            userAuthenticationService,
           },
           containerDimensions: 'w-[70%] max-w-[900px]',
         });
@@ -942,6 +954,12 @@ function commandsModule({
     },
     toggleCine: {
       commandFn: actions.toggleCine,
+    },
+    toggleIsShownPatientInfo: {
+      commandFn: actions.toggleIsShownPatientInfo,
+    },
+    toggleIsShouldAnonymizePatientInfo: {
+      commandFn: actions.toggleIsShouldAnonymizePatientInfo,
     },
     arrowTextCallback: {
       commandFn: actions.arrowTextCallback,

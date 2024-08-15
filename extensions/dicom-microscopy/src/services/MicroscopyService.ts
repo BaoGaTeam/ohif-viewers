@@ -22,8 +22,8 @@ export default class MicroscopyService extends PubSubService {
     return {
       name: 'microscopyService',
       altName: 'MicroscopyService',
-      create: (props) => {
-        return new MicroscopyService(props);
+      create: ({ configuration = {} }) => {
+        return new MicroscopyService(servicesManager);
       },
     };
   };
@@ -325,11 +325,11 @@ export default class MicroscopyService extends PubSubService {
 
     let derivedDisplaySets = FrameOfReferenceUID
       ? displaySets.filter(
-          ds =>
-            ds.ReferencedFrameOfReferenceUID === FrameOfReferenceUID ||
-            // sometimes each depth instance has the different FrameOfReferenceID
-            othersFrameOfReferenceUID.includes(ds.ReferencedFrameOfReferenceUID)
-        )
+        ds =>
+          ds.ReferencedFrameOfReferenceUID === FrameOfReferenceUID ||
+          // sometimes each depth instance has the different FrameOfReferenceID
+          othersFrameOfReferenceUID.includes(ds.ReferencedFrameOfReferenceUID)
+      )
       : [];
 
     if (!derivedDisplaySets.length) {

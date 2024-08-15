@@ -36,10 +36,14 @@ async function updateViewportsForSegmentationRendering({
 
   const referencedDisplaySetInstanceUID =
     displaySet?.referencedDisplaySetInstanceUID || viewport?.displaySetInstanceUIDs[0];
+  const referencedDisplaySetInstanceUID =
+    displaySet?.referencedDisplaySetInstanceUID || viewport?.displaySetInstanceUIDs[0];
 
   const updatedViewports = getUpdatedViewportsForSegmentation({
     viewportId,
+    viewportId,
     servicesManager,
+    displaySet,
     displaySet,
   });
 
@@ -60,6 +64,7 @@ async function updateViewportsForSegmentationRendering({
     viewport.viewportOptions = {
       ...viewport.viewportOptions,
       viewportType: displaySet?.Modality === 'RTSTRUCT' ? 'stack' : 'volume',
+      viewportType: displaySet?.Modality === 'RTSTRUCT' ? 'stack' : 'volume',
       needsRerendering: true,
     };
     const viewportId = viewport.viewportId;
@@ -78,41 +83,42 @@ async function updateViewportsForSegmentationRendering({
     // only run the createSegmentationForVolume for the targetViewportId
     // since the rest will get handled by cornerstoneViewportService
     if ((volumeExists || displaySet.Modality === 'RTSTRUCT') && viewportId === targetViewportId) {
-      await createSegmentationForVolume();
-      return;
-    }
-
-    const createNewSegmentationWhenVolumeMounts = async evt => {
-      const isTheActiveViewportVolumeMounted = evt.detail.volumeActors?.find(ac =>
-        ac.uid.includes(referencedDisplaySetInstanceUID)
-      );
-
-      // Note: make sure to re-grab the viewport since it might have changed
-      // during the time it took for the volume to be mounted, for instance
-      // the stack viewport has been changed to a volume viewport
-      const volumeViewport = cornerstoneViewportService.getCornerstoneViewport(viewportId);
-      volumeViewport.setCamera(prevCamera);
-
-      volumeViewport.element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        createNewSegmentationWhenVolumeMounts
-      );
-
-      if (!isTheActiveViewportVolumeMounted) {
-        // it means it is one of those other updated viewports so just update the camera
+      if ((volumeExists || displaySet.Modality === 'RTSTRUCT') && viewportId === targetViewportId) {
+        await createSegmentationForVolume();
         return;
       }
 
-      if (viewportId === targetViewportId) {
-        await createSegmentationForVolume();
-      }
-    };
+      const createNewSegmentationWhenVolumeMounts = async evt => {
+        const isTheActiveViewportVolumeMounted = evt.detail.volumeActors?.find(ac =>
+          ac.uid.includes(referencedDisplaySetInstanceUID)
+        );
 
-    csViewport.element.addEventListener(
-      Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-      createNewSegmentationWhenVolumeMounts
-    );
-  });
+        // Note: make sure to re-grab the viewport since it might have changed
+        // during the time it took for the volume to be mounted, for instance
+        // the stack viewport has been changed to a volume viewport
+        const volumeViewport = cornerstoneViewportService.getCornerstoneViewport(viewportId);
+        volumeViewport.setCamera(prevCamera);
+
+        volumeViewport.element.removeEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          createNewSegmentationWhenVolumeMounts
+        );
+
+        if (!isTheActiveViewportVolumeMounted) {
+          // it means it is one of those other updated viewports so just update the camera
+          return;
+        }
+
+        if (viewportId === targetViewportId) {
+          await createSegmentationForVolume();
+        }
+      };
+
+      csViewport.element.addEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        createNewSegmentationWhenVolumeMounts
+      );
+    });
 
   // Set the displaySets for the viewports that require to be updated
   viewportGridService.setDisplaySetsForViewports(updatedViewports);
@@ -138,12 +144,15 @@ const getTargetViewport = ({ viewportId, viewportGridService }) => {
  * @param params.viewportId - the ID of the viewport to be updated.
  * @param params.servicesManager - The services manager
  * @param params.displaySet -  the display set.
+ * @param params.displaySet -  the display set.
  *
  * @returns {Array} Returns an array of viewports that require updates for segmentation rendering.
  */
 function getUpdatedViewportsForSegmentation({
   viewportId,
   servicesManager,
+  displaySet,
+}: withAppTypes) {
   displaySet,
 }: withAppTypes) {
   const { hangingProtocolService, displaySetService, segmentationService, viewportGridService } =
@@ -158,6 +167,7 @@ function getUpdatedViewportsForSegmentation({
 
   const referenceDisplaySetInstanceUID =
     displaySet?.referencedDisplaySetInstanceUID || displaySetInstanceUIDs[0];
+  displaySet?.referencedDisplaySetInstanceUID || displaySetInstanceUIDs[0];
 
   const referencedDisplaySet = displaySetService.getDisplaySetByUID(referenceDisplaySetInstanceUID);
   const segmentationFrameOfReferenceUID = referencedDisplaySet.instances[0].FrameOfReferenceUID;
@@ -186,6 +196,7 @@ function getUpdatedViewportsForSegmentation({
         viewportId,
         displaySetInstanceUIDs: viewport.displaySetInstanceUIDs,
         viewportOptions: {
+          viewportType: displaySet?.Modality === 'RTSTRUCT' ? 'stack' : 'volume',
           viewportType: displaySet?.Modality === 'RTSTRUCT' ? 'stack' : 'volume',
           needsRerendering: true,
         },

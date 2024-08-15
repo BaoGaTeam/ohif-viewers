@@ -14,7 +14,7 @@ const getClassName = isToggled => {
 };
 
 export default function getToolbarModule({ commandsManager, servicesManager }: withAppTypes) {
-  const { cineService } = servicesManager.services;
+  const { cineService, visibilityPreferencesService } = servicesManager.services;
   return [
     {
       name: 'ohif.radioGroup',
@@ -66,6 +66,20 @@ export default function getToolbarModule({ commandsManager, servicesManager }: w
       name: 'evaluate.cine',
       evaluate: () => {
         const isToggled = cineService.getState().isCineEnabled;
+        return getClassName(isToggled);
+      },
+    },
+    {
+      name: 'evaluate.visbilityPreferences.toggleIsShownPatientInfo',
+      evaluate: () => {
+        const isToggled = visibilityPreferencesService.getState().isShownPatientInfo;
+        return getClassName(isToggled);
+      },
+    },
+    {
+      name: 'evaluate.visbilityPreferences.toggleIsShouldAnonymizePatientInfo',
+      evaluate: () => {
+        const isToggled = visibilityPreferencesService.getState().isShouldAnonymizePatientInfo;
         return getClassName(isToggled);
       },
     },

@@ -1,8 +1,20 @@
 import { DicomMetadataStore, IWebApiDataSource } from '@ohif/core';
 import OHIF from '@ohif/core';
+import { decompressFromEncodedURIComponent } from 'lz-string';
+import dcmjs from 'dcmjs';
 
 import getImageId from '../DicomWebDataSource/utils/getImageId';
 import getDirectURL from '../utils/getDirectURL';
+
+const { DicomMetaDictionary, DicomDict } = dcmjs.data;
+
+const { denaturalizeDataset } = DicomMetaDictionary;
+
+const ImplementationClassUID = '2.25.270695996825855179949881587723571202391.2.0.0';
+const ImplementationVersionName = 'OHIF-VIEWER-2.0.0';
+const EXPLICIT_VR_LITTLE_ENDIAN = '1.2.840.10008.1.2.1';
+
+const STUDY_METADATA_URL_REGEX = /\/dicoms\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\.json$/;
 
 const metadataProvider = OHIF.classes.MetadataProvider;
 
@@ -58,11 +70,48 @@ const findStudies = (key, value) => {
   return studies;
 };
 
-function createDicomJSONApi(dicomJsonConfig) {
+function getUrl(query) {
+  return query.get('id') ? decompressFromEncodedURIComponent(query.get('id')) : query.get('url');
+}
+
+async function storeInstance({ dicomEndpoint, branchId, studyDate, buffer, authHeader }) {
+  const dicomDict = dcmjs.data.DicomMessage.readFile(buffer);
+  const instance = dcmjs.data.DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
+  const { StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID } = instance;
+
+  const formData = new FormData();
+  const blob = new Blob([buffer], { type: 'application/dicom' });
+  const dcmFile = new File([blob], `${SOPInstanceUID}.dcm`, { type: 'application/dicom' });
+  formData.append('DicomMeasurementFile', dcmFile);
+
+  const endpoint = `${dicomEndpoint}/dicoms/${branchId}/${studyDate}/${StudyInstanceUID}/${SeriesInstanceUID}/${SOPInstanceUID}`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    body: formData,
+    headers: { ...authHeader },
+  });
+
+  if (!response.ok) {
+    throw new Error('Cannot store instance');
+  }
+}
+
+function createDicomJSONApi(dicomJsonConfig, servicesManager) {
+  const { wadoRoot } = dicomJsonConfig;
+  const { userAuthenticationService } = servicesManager.services;
+
+  let dicomEndpoint, branchId, studyDate;
+
   const implementation = {
     initialize: async ({ query, url }) => {
       if (!url) {
-        url = query.get('url');
+        url = getUrl(query);
+        if (STUDY_METADATA_URL_REGEX.test(url)) {
+          const matches = url.match(STUDY_METADATA_URL_REGEX);
+          dicomEndpoint = new URL(url).origin;
+          branchId = matches[1];
+          studyDate = matches[2];
+        }
       }
       let metaData = getMetaDataByURL(url);
 
@@ -75,7 +124,8 @@ function createDicomJSONApi(dicomJsonConfig) {
         });
       }
 
-      const response = await fetch(url);
+      const headers = userAuthenticationService.getAuthorizationHeader();
+      const response = await fetch(url, { headers });
       const data = await response.json();
 
       let StudyInstanceUID;
@@ -244,9 +294,49 @@ function createDicomJSONApi(dicomJsonConfig) {
       },
     },
     store: {
-      dicom: () => {
-        console.warn(' DICOMJson store dicom not implemented');
+      dicom: async (dataset, _request, dicomDict) => {
+        if (!dicomEndpoint || !branchId || !studyDate) {
+          return;
+        }
+
+        const authHeader = userAuthenticationService.getAuthorizationHeader();
+
+        if (dataset instanceof ArrayBuffer) {
+          await storeInstance({ dicomEndpoint, branchId, studyDate, buffer: dataset, authHeader });
+        } else {
+          let effectiveDicomDict = dicomDict;
+
+          if (!dicomDict) {
+            const meta = {
+              FileMetaInformationVersion: dataset._meta?.FileMetaInformationVersion?.Value,
+              MediaStorageSOPClassUID: dataset.SOPClassUID,
+              MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
+              TransferSyntaxUID: EXPLICIT_VR_LITTLE_ENDIAN,
+              ImplementationClassUID,
+              ImplementationVersionName,
+            };
+
+            const denaturalized = denaturalizeDataset(meta);
+            const defaultDicomDict = new DicomDict(denaturalized);
+            defaultDicomDict.dict = denaturalizeDataset(dataset);
+
+            effectiveDicomDict = defaultDicomDict;
+          }
+
+          const part10Buffer = effectiveDicomDict.write();
+          await storeInstance({
+            dicomEndpoint,
+            branchId,
+            studyDate,
+            buffer: part10Buffer,
+            authHeader,
+          });
+        }
       },
+    },
+    deleteStudyMetadataPromise(...args) {
+      console.log('deleteStudyMetadataPromise', args);
+      console.log('deleteStudyMetadataPromise not implemented');
     },
     getImageIdsForDisplaySet(displaySet) {
       const images = displaySet.images;
@@ -268,7 +358,7 @@ function createDicomJSONApi(dicomJsonConfig) {
         const NumberOfFrames = instance.NumberOfFrames;
 
         if (NumberOfFrames > 1) {
-          for (let i = 0; i < NumberOfFrames; i++) {
+          for (let i = 1; i <= NumberOfFrames; i++) {
             const imageId = getImageId({
               instance,
               frame: i,
@@ -289,7 +379,7 @@ function createDicomJSONApi(dicomJsonConfig) {
       return imageIds;
     },
     getStudyInstanceUIDs: ({ params, query }) => {
-      const url = query.get('url');
+      const url = getUrl(query);
       return _store.studyInstanceUIDMap.get(url);
     },
   };

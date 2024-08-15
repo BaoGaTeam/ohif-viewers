@@ -6,10 +6,10 @@ import { Types } from '@ohif/core';
 import MeasurementItem from './MeasurementItem';
 
 const MeasurementTable = ({
-  data = [],
+  data,
   title,
-  onClick = () => {},
-  onEdit = () => {},
+  onClick,
+  onEdit,
   onDelete,
   servicesManager,
 }: withAppTypes) => {

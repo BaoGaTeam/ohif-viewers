@@ -84,4 +84,10 @@ LayoutSelector.propTypes = {
   servicesManager: PropTypes.object.isRequired,
 };
 
+LayoutSelector.defaultProps = {
+  rows: 3,
+  columns: 3,
+  onLayoutChange: () => {},
+};
+
 export default LegacyLayoutSelectorWithServices;

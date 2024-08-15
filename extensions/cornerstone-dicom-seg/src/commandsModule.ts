@@ -1,6 +1,7 @@
 import dcmjs from 'dcmjs';
 import { createReportDialogPrompt } from '@ohif/extension-default';
 import { Types } from '@ohif/core';
+import { Types } from '@ohif/core';
 import { cache, metaData } from '@cornerstonejs/core';
 import {
   segmentation as cornerstoneToolsSegmentation,

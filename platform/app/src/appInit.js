@@ -20,6 +20,7 @@ import {
   CustomizationService,
   PanelService,
   WorkflowStepsService,
+  VisibilityPreferencesService,
   StudyPrefetcherService,
   // utils,
 } from '@ohif/core';
@@ -70,6 +71,7 @@ async function appInit(appConfigOrFunc, defaultExtensions, defaultModes) {
     ViewportGridService.REGISTRATION,
     HangingProtocolService.REGISTRATION,
     CineService.REGISTRATION,
+    VisibilityPreferencesService.REGISTRATION,
     UserAuthenticationService.REGISTRATION,
     PanelService.REGISTRATION,
     WorkflowStepsService.REGISTRATION,

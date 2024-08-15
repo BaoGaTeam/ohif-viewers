@@ -10,6 +10,7 @@ import {
 import { ToolGroupManager } from '@cornerstonejs/tools';
 import PropTypes from 'prop-types';
 import { ViewportDownloadForm } from '@ohif/ui';
+import { decompressFromEncodedURIComponent } from 'lz-string';
 
 import { getEnabledElement as OHIFgetEnabledElement } from '../state';
 
@@ -18,10 +19,17 @@ const DEFAULT_SIZE = 512;
 const MAX_TEXTURE_SIZE = 10000;
 const VIEWPORT_ID = 'cornerstone-viewport-download-form';
 
+function uuidv4(): string {
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+  );
+}
+
 const CornerstoneViewportDownloadForm = ({
   onClose,
   activeViewportId: activeViewportIdProp,
   cornerstoneViewportService,
+  userAuthenticationService,
 }) => {
   const enabledElement = OHIFgetEnabledElement(activeViewportIdProp);
   const activeViewportElement = enabledElement?.element;
@@ -215,6 +223,43 @@ const CornerstoneViewportDownloadForm = ({
     });
   };
 
+  const uploadAndCopyBlob = async fileType => {
+    const div = document.querySelector(`div[data-viewport-uid="${VIEWPORT_ID}"]`);
+    const canvas = await html2canvas(div);
+
+    async function uploadImage(blob, fileType) {
+      const studyId = new URL(window.location.href).searchParams.get('id');
+      if (!studyId) {
+        throw new Error('Cannot extract API endpoint from study ID');
+      }
+
+      const studyMetadataUrl = new URL(decompressFromEncodedURIComponent(studyId));
+      const endpoint = studyMetadataUrl.origin + '/api/file/image';
+
+      const formData = new FormData();
+      const type = fileType === 'png' ? 'image/png' : 'image/jpeg';
+      const file = new File([blob], `${uuidv4()}.${fileType}`, { type });
+      formData.append('File', file);
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+        headers: { ...userAuthenticationService.getAuthorizationHeader() },
+      });
+
+      if (!response.ok) {
+        throw new Error('Cannot upload image');
+      }
+
+      const json = await response.json();
+      return json.data;
+    }
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => uploadImage(blob, fileType).then(resolve).catch(reject), fileType, 1.0);
+    });
+  };
+
   const downloadBlob = (filename, fileType) => {
     const file = `${filename}.${fileType}`;
     const divForDownloadViewport = document.querySelector(
@@ -242,6 +287,7 @@ const CornerstoneViewportDownloadForm = ({
       loadImage={loadImage}
       toggleAnnotations={toggleAnnotations}
       downloadBlob={downloadBlob}
+      uploadAndCopyBlob={uploadAndCopyBlob}
     />
   );
 };

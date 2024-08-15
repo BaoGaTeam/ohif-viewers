@@ -129,7 +129,7 @@ declare global {
         maxNumPrefetchRequests: number;
         order: 'closest' | 'downward' | 'upward';
       }
-  }
+    }
 
     export interface Test {
       services?: Services;

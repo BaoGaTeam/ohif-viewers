@@ -39,7 +39,7 @@ function Header({
       isSticky={isSticky}
       {...props}
     >
-      <div className="relative h-[48px] items-center ">
+      <div className="relative h-[44px] items-center ">
         <div className="absolute left-0 top-1/2 flex -translate-y-1/2 items-center">
           <div
             className={classNames(
@@ -55,9 +55,6 @@ function Header({
                 className="text-primary-active w-8"
               />
             )}
-            <div className="ml-1">
-              {WhiteLabeling?.createLogoComponentFn?.(React, props) || <Svg name="logo-ohif" />}
-            </div>
           </div>
         </div>
         <div className="absolute top-1/2 left-[250px]  h-8 -translate-y-1/2">{Secondary}</div>

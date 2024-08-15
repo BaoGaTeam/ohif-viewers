@@ -14,6 +14,7 @@ import {
   PanelService,
   UIDialogService,
   UIViewportDialogService,
+  VisibilityPreferencesService,
 } from '../services';
 
 /**

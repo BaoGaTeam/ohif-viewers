@@ -23,6 +23,7 @@ import {
   CineProvider,
   UserAuthenticationProvider,
   ToolboxProvider,
+  VisibilityPreferencesProvider,
 } from '@ohif/ui';
 import { ThemeWrapper as ThemeWrapperNext } from '@ohif/ui-next';
 // Viewer Project
@@ -99,6 +100,7 @@ function App({
     cineService,
     userAuthenticationService,
     customizationService,
+    visibilityPreferencesService,
   } = servicesManager.services;
 
   const providers = [
@@ -111,7 +113,7 @@ function App({
     [ViewportGridProvider, { service: viewportGridService }],
     [ViewportDialogProvider, { service: uiViewportDialogService }],
     [CineProvider, { service: cineService }],
-    // [NotificationProvider, { service: uiNotificationService }],
+    [VisibilityPreferencesProvider, { service: visibilityPreferencesService }],
     [SnackbarProvider, { service: uiNotificationService }],
     [DialogProvider, { service: uiDialogService }],
     [ModalProvider, { service: uiModalService, modal: Modal }],

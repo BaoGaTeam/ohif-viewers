@@ -3,9 +3,15 @@ import { vec3 } from 'gl-matrix';
 import PropTypes from 'prop-types';
 import { metaData, Enums, utilities } from '@cornerstonejs/core';
 import { ImageSliceData } from '@cornerstonejs/core/dist/esm/types';
-import { ViewportOverlay } from '@ohif/ui';
+import { ViewportOverlay, useVisibilityPreferences } from '@ohif/ui';
 import { InstanceMetadata } from '@ohif/core/src/types';
-import { formatPN, formatDICOMDate, formatDICOMTime, formatNumberPrecision } from './utils';
+import {
+  formatPN,
+  formatDICOMDate,
+  formatDICOMTime,
+  formatNumberPrecision,
+  formatString,
+} from './utils';
 import { StackViewportData, VolumeViewportData } from '../../types/CornerstoneCacheService';
 
 import './CustomizableViewportOverlay.css';
@@ -27,6 +33,7 @@ interface OverlayItemProps {
     formatDate: (val) => string;
     formatTime: (val) => string;
     formatNumberPrecision: (val, number) => string;
+    formatString: (val: string, options?: { isAnonymized?: boolean }) => string;
   };
 
   // calculated values
@@ -133,6 +140,8 @@ function CustomizableViewportOverlay({
 }) {
   const { cornerstoneViewportService, customizationService, toolGroupService, displaySetService } =
     servicesManager.services;
+  const [{ isShownPatientInfo, isShouldAnonymizePatientInfo: isAnonymized }] =
+    useVisibilityPreferences();
   const [voi, setVOI] = useState({ windowCenter: null, windowWidth: null });
   const [scale, setScale] = useState(1);
   const { imageIndex } = imageSliceData;
@@ -250,6 +259,7 @@ function CustomizableViewportOverlay({
         customization: item,
         formatters: {
           formatPN,
+          formatString,
           formatDate: formatDICOMDate,
           formatTime: formatDICOMTime,
           formatNumberPrecision,
@@ -316,30 +326,237 @@ function CustomizableViewportOverlay({
     [_renderOverlayItem]
   );
 
+  const patientNameItem = {
+    id: 'PatientName',
+    customizationType: 'ohif.overlayItem',
+    label: 'Name:',
+    title: 'Patient Name',
+    condition: ({ instance }) => {
+      const patientNameOrArray = isShownPatientInfo && instance && instance.PatientName;
+      if (!patientNameOrArray) {
+        return false;
+      }
+
+      return Array.isArray(patientNameOrArray)
+        ? patientNameOrArray.some(name => !!name.Alphabetic)
+        : instance.PatientName.Alphabetic;
+    },
+    contentF: ({ instance, formatters: { formatPN, formatString } }) => {
+      const patientName = Array.isArray(instance.PatientName)
+        ? instance.PatientName.find(name => !!name.Alphabetic)
+        : instance.PatientName;
+      const formattedName = formatPN(patientName.Alphabetic);
+      return formatString(formattedName, { isAnonymized });
+    },
+  };
+
+  const patientIdItem = {
+    id: 'PID',
+    customizationType: 'ohif.overlayItem',
+    label: 'PatId:',
+    title: 'Patient PID',
+    condition: ({ instance }) => isShownPatientInfo && instance && instance.PatientID,
+    contentF: ({ instance, formatters: { formatString } }) =>
+      formatString(instance.PatientID, { isAnonymized }),
+  };
+
+  const patientAgeItem = {
+    id: 'PatientAge',
+    customizationType: 'ohif.overlayItem',
+    label: 'Age:',
+    title: 'Patient Age',
+    condition: ({ instance }) => isShownPatientInfo && instance && instance.PatientAge,
+    contentF: ({ instance }) => instance.PatientAge,
+  };
+
+  const patientSexItem = {
+    id: 'PatientSex',
+    customizationType: 'ohif.overlayItem',
+    label: 'Sex:',
+    title: 'Patient Sex',
+    condition: ({ instance }) => isShownPatientInfo && instance && instance.PatientSex,
+    contentF: ({ instance }) => instance.PatientSex,
+  };
+
+  const repetitionTimeItem = {
+    id: 'RepetitionTime',
+    customizationType: 'ohif.overlayItem',
+    label: 'TR:',
+    title: 'Repetition time',
+    condition: ({ instance }) => instance && instance.RepetitionTime,
+    contentF: ({ instance, formatters: { formatNumberPrecision } }) =>
+      formatNumberPrecision(instance.RepetitionTime, 1),
+  };
+
+  const fieldStrengthAndSliceThicknessItem = {
+    id: 'FieldStrengthAndSliceThickness',
+    customizationType: 'ohif.overlayItem',
+    label: '',
+    title: 'Field strength and slice thickness',
+    condition: ({ instance }) =>
+      (instance && instance.MagneticFieldStrength) || (instance && instance.SliceThickness),
+    contentF: ({ instance, formatters: { formatNumberPrecision } }) => {
+      const values = [];
+
+      if (instance.MagneticFieldStrength) {
+        values.push(`FS: ${formatNumberPrecision(instance.MagneticFieldStrength, 2)}`);
+      }
+
+      if (instance.SliceThickness) {
+        values.push(`Th: ${instance.SliceThickness}mm`);
+      }
+
+      return values.join(' ');
+    },
+  };
+
+  const manufacturerModelNameItem = {
+    id: 'ManufacturerModelName',
+    customizationType: 'ohif.overlayItem',
+    label: '',
+    title: 'Manufacturer model name',
+    attribute: 'ManufacturerModelName',
+    condition: ({ instance }) => instance && instance.ManufacturerModelName,
+  };
+
+  const studyDateItem = {
+    id: 'StudyDate',
+    customizationType: 'ohif.overlayItem',
+    label: '',
+    title: 'Study date',
+    condition: ({ instance }) => instance && instance.StudyDate,
+    contentF: ({ instance, formatters: { formatDate } }) => formatDate(instance.StudyDate),
+  };
+
+  const seriesDescriptionItem = {
+    id: 'SeriesDescription',
+    customizationType: 'ohif.overlayItem',
+    label: '',
+    title: 'Series description',
+    attribute: 'SeriesDescription',
+    condition: ({ instance }) => {
+      return instance && instance.SeriesDescription;
+    },
+  };
+
+  const seriesNumberItem = {
+    id: 'SeriesNumber',
+    customizationType: 'ohif.overlayItem',
+    label: 'Se:',
+    title: 'Series number',
+    attribute: 'SeriesNumber',
+    condition: ({ instance }) => {
+      return instance && instance.SeriesNumber;
+    },
+  };
+
+  const topLeftItems = instances
+    ? instances
+        .map((instance, index) => {
+          return [
+            { ...patientNameItem, instanceIndex: index },
+            { ...patientIdItem, instanceIndex: index },
+            { ...patientAgeItem, instanceIndex: index },
+            { ...patientSexItem, instanceIndex: index },
+          ];
+        })
+        .flat()
+    : [];
+
+  const bottomLeftItems = instances
+    ? instances
+        .map((instance, index) => {
+          return [
+            { ...fieldStrengthAndSliceThicknessItem, instanceIndex: index },
+            { ...repetitionTimeItem, instanceIndex: index },
+          ];
+        })
+        .flat()
+    : [];
+
+  const bottomRightItems = instances
+    ? instances
+        .map((instance, index) => {
+          return [{ ...seriesNumberItem, instanceIndex: index }];
+        })
+        .flat()
+    : [];
+
+  const topRightItems = instances
+    ? instances
+        .map((instance, index) => {
+          return [
+            { ...manufacturerModelNameItem, instanceIndex: index },
+            { ...studyDateItem, instanceIndex: index },
+            { ...seriesDescriptionItem, instanceIndex: index },
+          ];
+        })
+        .flat()
+    : [];
 
   return (
     <ViewportOverlay
-      topLeft={getContent(topLeftCustomization, 'topLeftOverlayItem')}
-      topRight={getContent(topRightCustomization, 'topRightOverlayItem')}
-      bottomLeft={getContent(bottomLeftCustomization, 'bottomLeftOverlayItem')}
-      bottomRight={getContent(bottomRightCustomization, 'bottomRightOverlayItem')}
+      topLeft={
+        /**
+         * Inline default overlay items for a more standard expansion
+         */
+        getContent(topLeftCustomization, [...topLeftItems], 'topLeftOverlayItem')
+      }
+      topRight={getContent(topRightCustomization, [...topRightItems], 'topRightOverlayItem')}
+      bottomLeft={getContent(
+        bottomLeftCustomization,
+        [
+          {
+            id: 'ZoomLevel',
+            customizationType: 'ohif.overlayItem.zoomLevel',
+            condition: () => {
+              const activeToolName = toolGroupService.getActiveToolForViewport(viewportId);
+              return activeToolName === 'Zoom' || true;
+            },
+          },
+          {
+            id: 'WindowLevel',
+            customizationType: 'ohif.overlayItem.windowLevel',
+          },
+          ...bottomLeftItems,
+        ],
+        'bottomLeftOverlayItem'
+      )}
+      bottomRight={getContent(
+        bottomRightCustomization,
+        [
+          {
+            id: 'InstanceNumber',
+            customizationType: 'ohif.overlayItem.instanceNumber',
+          },
+          ...bottomRightItems,
+        ],
+        'bottomRightOverlayItem'
+      )}
     />
   );
 }
 
-/**
- * Gets an array of display sets for the given viewport, based on the viewport data.
- * Returns null if none found.
- */
-function getDisplaySets(viewportData, displaySetService) {
-  if (!viewportData?.data?.length) {
-    return null;
+function _getViewportInstances(viewportData) {
+  const imageIds = [];
+  if (viewportData.viewportType === Enums.ViewportType.STACK) {
+    imageIds.push(viewportData.data[0].imageIds[0]);
+  } else if (viewportData.viewportType === Enums.ViewportType.ORTHOGRAPHIC) {
+    const volumes = viewportData.data;
+    volumes.forEach(volume => {
+      if (!volume?.imageIds || volume.imageIds.length === 0) {
+        return;
+      }
+      imageIds.push(volume.imageIds[0]);
+    });
   }
-  const displaySets = viewportData.data.map(datum => displaySetService.getDisplaySetByUID(datum.displaySetInstanceUID)).filter(it => !!it);
-  if (!displaySets.length) {
-    return null;
-  }
-  return displaySets;
+  const instances = [];
+
+  imageIds.forEach(imageId => {
+    const instance = metaData.get('instance', imageId) || {};
+    instances.push(instance);
+  });
+  return instances;
 }
 
 const getInstanceNumber = (viewportData, viewportId, imageIndex, cornerstoneViewportService) => {

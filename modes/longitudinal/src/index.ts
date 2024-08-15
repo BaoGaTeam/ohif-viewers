@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { id } from './id';
 import initToolGroups from './initToolGroups';
 import toolbarButtons from './toolbarButtons';
-import moreTools from './moreTools';
+import { expandSplitButton } from './utils';
 
 // Allow this mode by excluding non-imaging modalities such as SR, SEG
 // Also, SM is not a simple imaging modalities, so exclude it.
@@ -13,6 +13,7 @@ const ohif = {
   layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
   sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
   thumbnailList: '@ohif/extension-default.panelModule.seriesList',
+  preferences: '@ohif/extension-default.panelModule.preferences',
 };
 
 const tracked = {
@@ -100,17 +101,68 @@ function modeFactory({ modeConfiguration }) {
       // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager, this.labelConfig);
 
-      toolbarService.addButtons([...toolbarButtons, ...moreTools]);
+      toolbarService.addButtons([
+        ...toolbarButtons,
+        ...toolbarButtons
+          .filter(button => button.uiType === 'ohif.splitButton')
+          .map(expandSplitButton)
+          .flat(),
+      ]);
+
       toolbarService.createButtonSection('primary', [
-        'MeasurementTools',
-        'Zoom',
-        'Pan',
-        'TrackballRotate',
-        'WindowLevel',
-        'Capture',
         'Layout',
+        'EndLayoutTools',
+        'StackScroll',
+        'Pan',
+        'Zoom',
+        'WindowLevel',
+        'TrackballRotate',
         'Crosshairs',
+        'EndMoveTools',
+        'Length',
+        'Probe',
+        'EllipticalROI',
+        'RectangleROI',
+        'ArrowAnnotate',
+        'ClearMeasurements',
+        'OtherMeasurementTools',
+        'EndMeasurementTools',
+        'RotateRight',
+        'RotateLeft',
+        'FlipHorizontal',
+        'FlipVertical',
+        'Invert',
+        'Reset',
+        'EndTransformTools',
+        'Cine',
+        'Capture',
         'MoreTools',
+        'InfoTools',
+      ]);
+
+      toolbarService.createButtonSection('sidebar-image-tools', [
+        'RotateRight',
+        'RotateLeft',
+        'FlipHorizontal',
+        'FlipVertical',
+        'Invert',
+        'Reset',
+      ]);
+
+      toolbarService.createButtonSection('sidebar-other-tools', [
+        'Cine',
+        'Capture',
+        'MoreTools-Magnify',
+        'MoreTools-ImageSliceSync',
+        'MoreTools-ReferenceLines',
+        'MoreTools-ImageOverlayViewer',
+        'MoreTools-UltrasoundDirectionalTool',
+      ]);
+
+      toolbarService.createButtonSection('sidebar-info-tools', [
+        'InfoTools-TagBrowser',
+        'InfoTools-PatientInfo',
+        'InfoTools-AnonyInfo',
       ]);
 
       customizationService.addModeCustomizations([
@@ -188,9 +240,9 @@ function modeFactory({ modeConfiguration }) {
           return {
             id: ohif.layout,
             props: {
-              leftPanels: [tracked.thumbnailList],
-              rightPanels: [dicomSeg.panel, tracked.measurements],
-              rightPanelClosed: true,
+              leftPanels: [ohif.preferences, tracked.measurements, dicomSeg.panel],
+              rightPanels: [tracked.thumbnailList],
+              rightPanelClosed: false,
               viewports: [
                 {
                   namespace: tracked.viewport,
@@ -228,7 +280,7 @@ function modeFactory({ modeConfiguration }) {
     ],
     extensions: extensionDependencies,
     // Default protocol gets self-registered by default in the init
-    hangingProtocol: 'default',
+    hangingProtocol: 'split2D',
     // Order is important in sop class handlers when two handlers both use
     // the same sop class under different situations.  In that case, the more
     // general handler needs to come last.  For this case, the dicomvideo must
@@ -254,4 +306,4 @@ const mode = {
 };
 
 export default mode;
-export { initToolGroups, moreTools, toolbarButtons };
+export { initToolGroups, toolbarButtons };

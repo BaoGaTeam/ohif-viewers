@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router';
 import PropTypes from 'prop-types';
 import { utils } from '@ohif/core';
-import { DragAndDropProvider, ImageViewerProvider } from '@ohif/ui';
+import { DragAndDropProvider, ImageViewerProvider, LoadingIndicatorProgress } from '@ohif/ui';
 import { useSearchParams } from '@hooks';
 import { useAppConfig } from '@state';
 import ViewportGrid from '@components/ViewportGrid';
@@ -66,7 +66,7 @@ export default function ModeRoute({
   const { extensions, sopClassHandlers, hotkeys: hotkeyObj, hangingProtocol } = mode;
 
   const runTimeHangingProtocolId = lowerCaseSearchParams.get('hangingprotocolid');
-  const token = lowerCaseSearchParams.get('token');
+  const token = lowerCaseSearchParams.get('token') ?? window.sessionStorage.getItem('pacs::token');
 
   if (token) {
     updateAuthServiceAndCleanUrl(token, location, userAuthenticationService);
@@ -329,7 +329,12 @@ export default function ModeRoute({
   ]);
 
   if (!studyInstanceUIDs || !layoutTemplateData.current || !ExtensionDependenciesLoaded) {
-    return null;
+    return (
+      <LoadingIndicatorProgress
+        className="h-full w-full"
+        textBlock={<p className="mt-2 text-base text-white">Getting study info...</p>}
+      />
+    );
   }
 
   const ViewportGridWithDataSource = props => {

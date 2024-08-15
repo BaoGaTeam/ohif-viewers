@@ -36,6 +36,7 @@ import { showLabelAnnotationPopup } from './utils/callInputDialog';
 import ViewportActionCornersService from './services/ViewportActionCornersService/ViewportActionCornersService';
 import { ViewportActionCornersProvider } from './contextProviders/ViewportActionCornersProvider';
 import ActiveViewportWindowLevel from './components/ActiveViewportWindowLevel';
+import CinePlayer from './components/CinePlayer';
 import getSOPInstanceAttributes from './utils/measurementServiceMappings/utils/getSOPInstanceAttributes';
 import { findNearbyToolData } from './utils/findNearbyToolData';
 import { createFrameViewSynchronizer } from './synchronizers/frameViewSynchronizer';
@@ -225,11 +226,13 @@ export {
   measurementMappingUtils,
   CornerstoneExtensionTypes as Types,
   toolNames,
+  getEnabledElement,
   getActiveViewportEnabledElement,
   setEnabledElement,
   findNearbyToolData,
   getEnabledElement,
   ImageOverlayViewerTool,
+  CinePlayer,
   getSOPInstanceAttributes,
   dicomLoaderService,
 };

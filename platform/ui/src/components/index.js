@@ -67,7 +67,7 @@ import WindowLevelMenuItem from './WindowLevelMenuItem';
 import UserPreferences from './UserPreferences';
 import HotkeysPreferences from './HotkeysPreferences';
 import HotkeyField from './HotkeyField';
-import Header from './Header';
+import Header, { CustomHeader } from './Header';
 import ImageScrollbar from './ImageScrollbar';
 import ViewportOverlay from './ViewportOverlay';
 import InputRange from './InputRange';
@@ -104,6 +104,7 @@ export {
   AllInOneMenu,
   HotkeyField,
   Header,
+  CustomHeader,
   UserPreferences,
   HotkeysPreferences,
   Button,

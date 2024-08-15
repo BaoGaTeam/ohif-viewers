@@ -1,6 +1,8 @@
 import * as Types from './types';
 
 export {
+  useVisibilityPreferences,
+  VisibilityPreferencesProvider,
   useCine,
   CineProvider,
   DialogProvider,
@@ -37,6 +39,7 @@ export {
   AllInOneMenu,
   HotkeyField,
   Header,
+  CustomHeader,
   UserPreferences,
   HotkeysPreferences,
   Button,

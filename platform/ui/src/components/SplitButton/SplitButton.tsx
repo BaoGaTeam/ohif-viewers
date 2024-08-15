@@ -55,7 +55,7 @@ const classes = {
       baseClasses.Separator,
       isHovering || isExpanded || primary.isActive ? 'border-transparent' : 'border-primary-active'
     ),
-  Content: ({ isExpanded }) => classNames(baseClasses.Content, isExpanded ? 'block' : 'hidden'),
+  Content: ({ isExpanded }) => classNames(/*baseClasses.Content,*/ isExpanded ? 'block' : 'hidden'),
 };
 
 const DefaultListItemRenderer = props => {
@@ -94,6 +94,7 @@ const SplitButton = ({
   renderer = null,
   onInteraction,
   Component = Icon,
+  toolTipPosition,
 }) => {
   const { t } = useTranslation('Buttons');
   const [state, setState] = useState({ isHovering: false, isExpanded: false });
@@ -110,18 +111,34 @@ const SplitButton = ({
     }),
     primary.className
   );
-  return (
+
+  const listMenuElement = (
     <OutsideClickHandler
       onOutsideClick={collapse}
       disabled={!state.isExpanded}
     >
+      <div
+        className={classes.Content({ ...state })}
+        data-cy={`${groupId}-list-menu`}
+      >
+        <ListMenu
+          items={items}
+          onClick={collapse}
+          renderer={args => listItemRenderer({ ...args, t })}
+        />
+      </div>
+    </OutsideClickHandler>
+  );
+
+  return (
+    <>
       <div
         id="SplitButton"
         className="relative"
       >
         <div
           className={classes.Button({ ...state })}
-          style={{ height: '40px' }}
+          style={{ height: '36px' }}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
         >
@@ -131,22 +148,26 @@ const SplitButton = ({
                 key={primary.id}
                 {...primary}
                 onInteraction={onInteraction}
+                toolTipPosition={toolTipPosition}
                 rounded="none"
                 className={primaryClassNames}
                 data-tool={primary.id}
                 data-cy={`${groupId}-split-button-primary`}
               />
             </div>
-            <div className={classes.Separator({ ...state, primary })}></div>
             <div
+              key={Number(state.isExpanded)}
               className={classes.Secondary({ ...state, primary })}
               onClick={toggleExpanded}
               data-cy={`${groupId}-split-button-secondary`}
             >
               <Tooltip
-                isDisabled={state.isExpanded || !secondary.tooltip}
-                content={secondary.tooltip}
+                isDisabled={!secondary.tooltip}
+                isSticky={state.isExpanded}
+                tight={state.isExpanded}
+                content={state.isExpanded ? listMenuElement : secondary.tooltip}
                 className="h-full"
+                position={toolTipPosition}
               >
                 <Icon
                   name={secondary.icon}
@@ -156,18 +177,8 @@ const SplitButton = ({
             </div>
           </div>
         </div>
-        <div
-          className={classes.Content({ ...state })}
-          data-cy={`${groupId}-list-menu`}
-        >
-          <ListMenu
-            items={items}
-            onClick={collapse}
-            renderer={args => listItemRenderer({ ...args, t })}
-          />
-        </div>
       </div>
-    </OutsideClickHandler>
+    </>
   );
 };
 
@@ -181,6 +192,13 @@ SplitButton.propTypes = {
   onInteraction: PropTypes.func.isRequired,
   Component: PropTypes.elementType,
   interactionType: PropTypes.oneOf(['action', 'tool', 'toggle']),
+};
+
+SplitButton.defaultProps = {
+  isToggle: false,
+  renderer: null,
+  isActive: false,
+  Component: null,
 };
 
 export default SplitButton;

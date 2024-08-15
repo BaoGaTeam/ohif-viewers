@@ -204,6 +204,28 @@ import MRDefault from './../../assets/icons/MR-Default.png';
 import MRMIP from './../../assets/icons/MR-MIP.png';
 import MRT2Brain from './../../assets/icons/MR-T2-Brain.png';
 import VolumeRendering from './../../assets/icons/VolumeRendering.png';
+import actionNewDialog from './../../assets/icons/action-new-dialog.svg';
+
+/** LAYOUT */
+
+import layoutAdvanced3DFourUp from './../../assets/icons/layout-advanced-3d-four-up.svg';
+import layoutAdvanced3DMain from './../../assets/icons/layout-advanced-3d-main.svg';
+import layoutAdvanced3DOnly from './../../assets/icons/layout-advanced-3d-only.svg';
+import layoutAdvanced3DPrimary from './../../assets/icons/layout-advanced-3d-primary.svg';
+import layoutAdvancedAxialPrimary from './../../assets/icons/layout-advanced-axial-primary.svg';
+import layoutAdvancedMPR from './../../assets/icons/layout-advanced-mpr.svg';
+import layoutCommon1x1 from './../../assets/icons/layout-common-1x1.svg';
+import layoutCommon1x2 from './../../assets/icons/layout-common-1x2.svg';
+import layoutCommon1x2Horizontal from './../../assets/icons/layout-common-1x2-horizontal.svg';
+import layoutCommon2x2 from './../../assets/icons/layout-common-2x2.svg';
+import layoutCommon2x3 from './../../assets/icons/layout-common-2x3.svg';
+import iconToolRotate from './../../assets/icons/tool-3d-rotate.svg';
+
+//
+import tab4D from './../../assets/icons/tab-4d.svg';
+
+/** New investigational use */
+import investigationalUse from './../../assets/icons/illustration-investigational-use.svg';
 
 const ICONS = {
   'arrow-down': arrowDown,
@@ -301,8 +323,10 @@ const ICONS = {
   'tool-length': toolLength,
   'tool-stack-scroll': toolStackScroll,
   'tool-magnify': toolMagnify,
+  'tool-flip-vertical': toolFlipVertical,
   'tool-flip-horizontal': toolFlipHorizontal,
   'tool-invert': toolInvert,
+  'tool-rotate-left': toolRotateLeft,
   'tool-rotate-right': toolRotateRight,
   'tool-cine': toolCine,
   'tool-crosshair': toolCrosshair,
@@ -318,6 +342,10 @@ const ICONS = {
   'tool-freehand-polygon': toolFreehandPolygon,
   'tool-polygon': toolPolygon,
   'tool-3d-rotate': iconToolRotate,
+  'tool-info': toolInfo,
+  'tool-patient-info': toolPatientInfo,
+  'tool-patient-info-anony': toolPatientInfoAnony,
+  'tool-clear-measurements': toolClearMeasurements,
   'edit-patient': editPatient,
   'icon-mpr': iconMPR,
   'icon-next-inactive': iconNextInactive,
@@ -414,6 +442,7 @@ const ICONS = {
   'layout-advanced-mpr': layoutAdvancedMPR,
   'layout-common-1x1': layoutCommon1x1,
   'layout-common-1x2': layoutCommon1x2,
+  'layout-common-1x2-horizontal': layoutCommon1x2Horizontal,
   'layout-common-2x2': layoutCommon2x2,
   'layout-common-2x3': layoutCommon2x3,
   'tab-4d': tab4D,
